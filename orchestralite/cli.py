@@ -65,6 +65,7 @@ def main():
                   f"checks {row['checks'] or 0}  changes {row['changes'] or 0}  "
                   f"errors {row['error_streak']}")
     elif args.cmd == "stats":
+        import math
         import statistics
 
         rows = conn.execute(
@@ -83,7 +84,7 @@ def main():
             lat = sorted(o["elapsed_ms"] for o in obs if o["elapsed_ms"] is not None)
             errs = sum(1 for o in obs if o["status"] != "ok")
             chg = sum(o["changed"] or 0 for o in obs)
-            p95 = lat[max(0, int(len(lat) * 0.95) - 1)] if lat else 0
+            p95 = lat[min(len(lat) - 1, math.ceil(len(lat) * 0.95) - 1)] if lat else 0
             med = statistics.median(lat) if lat else 0
             print(f"{name:<30} {len(obs):>6} {100 * chg / len(obs):>5.1f}% "
                   f"{100 * errs / len(obs):>5.1f}% {med:>8.1f} {p95:>8.1f} "
