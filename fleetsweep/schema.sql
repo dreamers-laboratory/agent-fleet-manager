@@ -1,4 +1,4 @@
--- orchestra-lite schema. Five tables, two state machines.
+-- fleetsweep schema. Five tables, two state machines.
 --
 -- Per action:  QUEUED -> LEASED -> RUNNING -> DONE | FAILED (-> QUEUED again while attempts remain)
 -- Per source:  next_due_at recomputed on every reconcile; errors back off exponentially.
