@@ -9,7 +9,7 @@ It came out of a production system where a mixed fleet of LLM agents and plain f
 - **Sales prospecting.** Register target companies' careers pages, press pages, and funding announcements. A changed hash on a careers page is a hiring signal; your worker (or an LLM agent reading the diff) turns it into a lead with a timestamp and a receipt.
 - **Competitor and price watch.** Pricing pages, feature pages, changelogs, app-store listings — checked on cadence, with `changed` flags you can alert on and history you can chart.
 - **Regulatory and compliance tracking.** Agency pages, statute databases, published guidance. The hash ledger doubles as evidence of when a change appeared and when you saw it.
-- **Research corpus upkeep.** Datasets, preprint feeds, documentation sets that must stay current. Re-ingest is safe because everything is idempotent by hash.
+- **Research corpus upkeep.** Datasets, preprint feeds, documentation sets that must stay current. Re-ingest is safe because everything is idempotent by hash. Research-tool example: [alphaXiv](https://x.com/askalphaxiv/status/2094797932994113805).
 - **Marketplace and listing monitoring.** Job boards, real-estate listings, auction lots — anything where being first to notice a change is the point.
 
 In every case the engine's contribution is the same: which of your thousands of sources are due right now, what actually changed, what is failing and backing off, and proof of all of it.
