@@ -74,8 +74,8 @@ def build_payload(conn, run_id: str = None) -> dict:
             })
     return {
         "resourceSpans": [{
-            "resource": {"attributes": [_attr("service.name", "fleetsweep")]},
-            "scopeSpans": [{"scope": {"name": "fleetsweep"}, "spans": spans}],
+            "resource": {"attributes": [_attr("service.name", "agentfleet")]},
+            "scopeSpans": [{"scope": {"name": "agentfleet"}, "spans": spans}],
         }]
     }
 

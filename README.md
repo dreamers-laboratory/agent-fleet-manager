@@ -1,4 +1,4 @@
-# fleetsweep
+# agent-fleet-manager
 
 A general-purpose engine for large-scale, repeated information gathering by a fleet of workers — plain fetchers, scrapers, or LLM agents. You register things to check and how often; the engine schedules what is due, leases work out in isolated batches, records what came back, detects change by content hash, backs off on failures, and keeps an auditable ledger of every write. One SQLite file is the entire system. Python standard library only.
 
@@ -16,7 +16,7 @@ In every case the engine's contribution is the same: which of your thousands of 
 
 ## The model
 
-Five tables (see [fleetsweep/schema.sql](fleetsweep/schema.sql)):
+Five tables (see [agentfleet/schema.sql](agentfleet/schema.sql)):
 
 - **source** — a thing to check: a route, a cadence, a `next_due_at`, an error streak
 - **action** — one unit of work; states `QUEUED → LEASED → RUNNING → DONE | FAILED`, requeued while attempts remain
@@ -31,10 +31,10 @@ Scheduling: success sets `next_due_at = now + cadence`; failure sets `next_due_a
 ## Quickstart
 
 ```
-python -m fleetsweep.cli add-source --db fleet.db acme-careers https://example.com/careers --cadence 3600
-python -m fleetsweep.cli sweep --db fleet.db
-python -m fleetsweep.cli status --db fleet.db
-python -m fleetsweep.cli stats --db fleet.db
+python -m agentfleet.cli add-source --db fleet.db acme-careers https://example.com/careers --cadence 3600
+python -m agentfleet.cli sweep --db fleet.db
+python -m agentfleet.cli status --db fleet.db
+python -m agentfleet.cli stats --db fleet.db
 ```
 
 `sweep` queues due sources, leases batches, fetches each route over HTTP, and reconciles. `stats` prints per-source change rate, error rate, median and p95 latency, and fleet totals. `python examples/demo.py` runs the whole loop on local files with no network. Tests: `python tests/test_engine.py`.
@@ -55,7 +55,7 @@ Then `reconcile(conn, batch_id)`. The engine treats a missing result file as a f
 The tables are span-shaped by construction, so telemetry is an export:
 
 ```
-python -m fleetsweep.cli export-otel --db fleet.db --endpoint http://localhost:4318
+python -m agentfleet.cli export-otel --db fleet.db --endpoint http://localhost:4318
 ```
 
 maps run → trace, batch → parent span, action → child span (with source name, hash, bytes, attempt, and changed-flag attributes) and posts OTLP/HTTP JSON to any collector, including a Grafana Cloud OTLP gateway. Omit `--endpoint` to inspect the JSON on stdout.

@@ -1,10 +1,10 @@
-"""Command line for fleetsweep.
+"""Command line for agentfleet.
 
-    python -m fleetsweep.cli init --db fleet.db
-    python -m fleetsweep.cli add-source --db fleet.db docs https://example.com/docs --cadence 3600
-    python -m fleetsweep.cli sweep --db fleet.db --scopes ./scopes
-    python -m fleetsweep.cli status --db fleet.db
-    python -m fleetsweep.cli export-otel --db fleet.db [--endpoint http://localhost:4318]
+    python -m agentfleet.cli init --db fleet.db
+    python -m agentfleet.cli add-source --db fleet.db docs https://example.com/docs --cadence 3600
+    python -m agentfleet.cli sweep --db fleet.db --scopes ./scopes
+    python -m agentfleet.cli status --db fleet.db
+    python -m agentfleet.cli export-otel --db fleet.db [--endpoint http://localhost:4318]
 """
 
 import argparse
@@ -21,7 +21,7 @@ def http_executor(route: str):
 def main():
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--db", default="fleet.db")
-    parser = argparse.ArgumentParser(prog="fleetsweep")
+    parser = argparse.ArgumentParser(prog="agentfleet")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("init", parents=[common])

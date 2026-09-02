@@ -11,7 +11,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from fleetsweep import engine, otel  # noqa: E402
+from agentfleet import engine, otel  # noqa: E402
 
 
 def file_executor(route):
@@ -28,7 +28,7 @@ def sweep(conn, scopes):
 
 
 def main():
-    tmp = tempfile.mkdtemp(prefix="fleetsweep-demo-")
+    tmp = tempfile.mkdtemp(prefix="agentfleet-demo-")
     conn = engine.connect(os.path.join(tmp, "fleet.db"))
     scopes = os.path.join(tmp, "scopes")
 
