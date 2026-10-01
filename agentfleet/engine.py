@@ -103,9 +103,11 @@ def lease(conn, scope_root: str, batch_size: int = 10, actor: str = "scheduler")
     return manifest
 
 
-def run_batch(conn, batch: dict, executor):
+def run_batch(conn, batch: dict, executor, *, evaluator=None):
     """In-process worker. `executor(route) -> (status_str, content_bytes)`.
-    Only writes inside the batch's write scope, like an external worker would."""
+    Optional `evaluator(content_bytes) -> JSON dict` adds analysis to the receipt,
+    not the content hash. An evaluation failure fails the action, not a successful
+    classification. Payload and result files stay inside the batch write scope."""
     for a in batch["actions"]:
         conn.execute(
             "UPDATE action SET state='RUNNING', started_at=? WHERE action_id=?",
@@ -114,10 +116,26 @@ def run_batch(conn, batch: dict, executor):
         conn.commit()
         started = now_iso()
         t0 = time.monotonic()
+        content = b""
+        evaluation = None
+        fetch_elapsed_ms = evaluation_elapsed_ms = None
         try:
             status, content = executor(a["route"])
+            fetch_elapsed_ms = (time.monotonic() - t0) * 1000
+            if status == "ok" and evaluator is not None:
+                te = time.monotonic()
+                try:
+                    evaluation = evaluator(content)
+                    if not isinstance(evaluation, dict):
+                        raise ValueError("evaluator must return a JSON object")
+                    json.dumps(evaluation, allow_nan=False)
+                finally:
+                    evaluation_elapsed_ms = (time.monotonic() - te) * 1000
         except Exception as exc:  # a worker failure is a result too
-            status, content = f"error: {type(exc).__name__}: {exc}", b""
+            if fetch_elapsed_ms is None:
+                fetch_elapsed_ms = (time.monotonic() - t0) * 1000
+            status = f"error: {type(exc).__name__}: {exc}"
+            evaluation = None
         elapsed_ms = (time.monotonic() - t0) * 1000
         result = {
             "action_id": a["action_id"],
@@ -129,6 +147,9 @@ def run_batch(conn, batch: dict, executor):
             "finished_at": now_iso(),
             "elapsed_ms": round(elapsed_ms, 3),
         }
+        if evaluator is not None:
+            result.update(fetch_elapsed_ms=fetch_elapsed_ms,
+                          evaluation_elapsed_ms=evaluation_elapsed_ms, evaluation=evaluation)
         path = os.path.join(batch["write_scope"], f"{a['action_id']}.json")
         with open(path, "w") as f:
             json.dump(result, f)

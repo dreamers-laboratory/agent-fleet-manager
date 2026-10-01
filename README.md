@@ -37,7 +37,45 @@ python -m agentfleet.cli status --db fleet.db
 python -m agentfleet.cli stats --db fleet.db
 ```
 
-`sweep` queues due sources, leases batches, fetches each route over HTTP, and reconciles. `stats` prints per-source change rate, error rate, median and p95 latency, and fleet totals. `python examples/demo.py` runs the whole loop on local files with no network. Tests: `python tests/test_engine.py`.
+`sweep` queues due sources, leases batches, fetches each route over HTTP, and reconciles. `stats` prints per-source change rate, error rate, median and p95 latency, and fleet totals. `python examples/demo.py` runs the whole loop on local files with no network. Tests: `python -m unittest discover -s tests -v`.
+
+## Optional Jev classification
+
+Use [TypeSafe's direct API](https://docs.typesafe.ai/api) to classify fetched text or explicit structured state. No SDK, gateway, database migration or key is needed for normal fleet operation. Jev is disabled unless requested.
+
+Provide `TYPESAFE_API_KEY` through your environment or secret manager; never put a key in source routes, input JSON, result files or Git. Then try the synthetic example:
+
+```sh
+python -m agentfleet.cli jev-evaluate examples/jev_request.json
+```
+
+The request file contains `state` and `questions`. Supported questions are `choice`, `noul` (yes/no probability) and `score`. Output contains the resolved model, typed answers and token usage. This command does not open or modify a fleet database. The default model is pinned to `jev-1.13.0`; override it with `--model`. `--timeout` defaults to 30 seconds.
+
+To evaluate each successfully fetched source during a sweep:
+
+```sh
+python -m agentfleet.cli sweep --db fleet.db --scopes ./scopes \
+  --jev-questions examples/jev_questions.json
+```
+
+**This opt-in sends fetched UTF-8 text and your rubric to TypeSafe.** Use it only for data you are authorized to share; extract and sanitize documents before classification when needed. Binary input fails explicitly, and oversized requests are rejected rather than silently truncated. Source text is untrusted evidence; write rubrics that preserve uncertainty for review.
+
+Each worker result JSON gains `evaluation` (model, answers, usage), `fetch_elapsed_ms`, and `evaluation_elapsed_ms`; `elapsed_ms` covers both phases. The `.payload` and `sha256` still describe the original source content, so changing model probabilities do not create false source-change alerts. Evaluation data is available through the observation's `receipt_path`, not new database columns. A valid classification is not an approval, rejection or proof of complete source coverage; the parent decides how to use it.
+
+API/validation failures fail the action and retain any fetched payload for inspection. Existing fleet retries/backoff still apply. The client itself makes one request, rejects redirects, limits request/response size to 1 MiB and never falls back to another provider. TypeSafe's token limits still apply below those byte limits. The CLI checks credentials and question configuration before queueing work. Sweep overrides: `--jev-model` and `--jev-timeout`.
+
+Python workers can use the same integration:
+
+```python
+from agentfleet import run_batch
+from agentfleet.jev import JevClient
+
+client = JevClient()  # TYPESAFE_API_KEY; no credentials in the result
+result = client.evaluate({"text": "A public changelog"}, questions)
+run_batch(conn, batch, fetcher, evaluator=client.text_evaluator(questions))
+```
+
+`run_batch` also accepts any `evaluator(content_bytes) -> JSON dict`. Evaluation is synchronous; the caller controls worker concurrency and API rate limits. Keep result scopes private if they contain sensitive source data. Error messages omit provider response bodies and credentials.
 
 ## Bring your own workers
 

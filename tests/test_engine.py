@@ -18,9 +18,14 @@ def make_fleet(tmp):
 
 class EngineTest(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.mkdtemp()
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.tmp = self.tempdir.name
         self.conn = make_fleet(self.tmp)
         self.scopes = os.path.join(self.tmp, "scopes")
+
+    def tearDown(self):
+        self.conn.close()
+        self.tempdir.cleanup()
 
     def sweep(self, executor):
         engine.queue_due(self.conn)

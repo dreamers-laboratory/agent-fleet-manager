@@ -8,6 +8,7 @@
 """
 
 import argparse
+import json
 import urllib.request
 
 from . import engine, otel
@@ -32,6 +33,13 @@ def main():
     p = sub.add_parser("sweep", parents=[common])
     p.add_argument("--scopes", default="./scopes")
     p.add_argument("--batch-size", type=int, default=10)
+    p.add_argument("--jev-questions", help="opt in: send fetched UTF-8 content to TypeSafe using this questions JSON")
+    p.add_argument("--jev-model", default="jev-1.13.0")
+    p.add_argument("--jev-timeout", type=float, default=30)
+    p = sub.add_parser("jev-evaluate", help="evaluate an explicit state/questions JSON file; no fleet DB writes")
+    p.add_argument("request", help="JSON file with state and questions")
+    p.add_argument("--model", default="jev-1.13.0")
+    p.add_argument("--timeout", type=float, default=30)
     sub.add_parser("status", parents=[common])
     sub.add_parser("stats", parents=[common])
     p = sub.add_parser("export-otel", parents=[common])
@@ -39,6 +47,24 @@ def main():
     p.add_argument("--endpoint")
 
     args = parser.parse_args()
+    evaluator = None
+    if args.cmd == "jev-evaluate" or (args.cmd == "sweep" and args.jev_questions):
+        from .jev import JevClient, JevError
+        try:
+            if args.cmd == "jev-evaluate":
+                with open(args.request) as f:
+                    request = json.load(f)
+                if not isinstance(request, dict) or "state" not in request or "questions" not in request:
+                    raise JevError("request file must contain state and questions")
+                result = JevClient(model=args.model, timeout=args.timeout).evaluate(
+                    request["state"], request["questions"])
+                print(json.dumps(result, indent=2))
+                return
+            with open(args.jev_questions) as f:
+                questions = json.load(f)
+            evaluator = JevClient(model=args.jev_model, timeout=args.jev_timeout).text_evaluator(questions)
+        except (JevError, OSError, ValueError) as exc:
+            parser.error(str(exc))
     conn = engine.connect(args.db)
 
     if args.cmd == "init":
@@ -51,7 +77,7 @@ def main():
         manifest = engine.lease(conn, args.scopes, args.batch_size)
         print(f"queued {queued}, leased {len(manifest)} batch(es)")
         for batch in manifest:
-            engine.run_batch(conn, batch, http_executor)
+            engine.run_batch(conn, batch, http_executor, evaluator=evaluator)
             counts = engine.reconcile(conn, batch["batch_id"])
             print(f"  {batch['batch_id']}: {counts}")
     elif args.cmd == "status":

@@ -4,3 +4,5 @@ __pycache__/
 *.db-wal
 *.db-shm
 scopes/
+.env
+.env.*

@@ -35,6 +35,10 @@ When routes need judgment (log in, interpret a page, summarize a diff), be the w
 
 Skipping a result file marks that action failed; the engine requeues and backs off on its own. Never edit the source, action, or observation tables directly — reconcile is the only door into canonical state.
 
+## Optional Jev evaluation
+
+Only with authorized data sharing: use `jev-evaluate <request.json>` for explicit state/questions, or `sweep --jev-questions <questions.json>` to send fetched UTF-8 text to the official TypeSafe API. Set `TYPESAFE_API_KEY` in the environment; never store it in routes, inputs, receipts or Git. See [README.md](README.md#optional-jev-classification) for examples. Preserve ambiguous cases for review; a model answer is not an automatic approval/rejection. API failures are failed checks, not negative findings. Answers, usage and phase timings live in receipts; source hashes remain unchanged.
+
 ## Review the fleet
 
 ```
