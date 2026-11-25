@@ -1,5 +1,9 @@
 # agent-fleet-manager
 
+<!-- yarkr:badges:start -->
+[![Indexed on Yarkr](https://api.yarkr.com/functions/v1/api/api/v1/badges/repos/dreamers-laboratory/agent-fleet-manager/version.svg)](https://yarkr.com/arks/dreamers-laboratory/agent-fleet-manager)
+<!-- yarkr:badges:end -->
+
 A general-purpose engine for large-scale, repeated information gathering by a fleet of workers — plain fetchers, scrapers, or LLM agents. You register things to check and how often; the engine schedules what is due, leases work out in isolated batches, records what came back, detects change by content hash, backs off on failures, and keeps an auditable ledger of every write. One SQLite file is the entire system. Python standard library only.
 
 It came out of a production system where a mixed fleet of LLM agents and plain fetchers tracks a few thousand sources on daily and weekly cadences. This is a clean rewrite of the part that generalizes: the bookkeeping. The engine never interprets what a source *is* — the route field means nothing to it and everything to your worker — which is why the same engine can run very different fleets.
@@ -38,6 +42,38 @@ python -m agentfleet.cli stats --db fleet.db
 ```
 
 `sweep` queues due sources, leases batches, fetches each route over HTTP, and reconciles. `stats` prints per-source change rate, error rate, median and p95 latency, and fleet totals. `python examples/demo.py` runs the whole loop on local files with no network. Tests: `python -m unittest discover -s tests -v`.
+
+<!-- yarkr:install:start -->
+## Install with Yarkr
+
+This repo is indexed on [Yarkr](https://yarkr.com/arks/dreamers-laboratory/agent-fleet-manager) as the ark [dreamers-laboratory/agent-fleet-manager](https://yarkr.com/arks/dreamers-laboratory/agent-fleet-manager), so its skills install into Claude Code, Codex, Cursor and other agent harnesses with one command.
+
+### CLI
+
+Install the whole ark, which Yarkr keeps equal to this repo:
+
+```bash
+npx yarkr-cli sync dreamers-laboratory/agent-fleet-manager
+```
+
+Or add individual skills:
+
+```bash
+npx yarkr-cli add skill:dreamers-laboratory/agent-fleet-manager/agent-fleet-manager
+```
+
+No Node.js? `curl -fsSL https://yarkr.com/install.sh | sh` (macOS, Linux) or `irm https://yarkr.com/install.ps1 | iex` (Windows PowerShell) installs `yarkr` as a standalone binary; then type `yarkr` in place of `npx yarkr-cli`.
+
+### MCP
+
+Connect your agent to the ark over MCP:
+
+```bash
+npx yarkr-cli mcp add dreamers-laboratory/agent-fleet-manager
+```
+
+Or point any MCP client at `https://api.yarkr.com/functions/v1/api/mcp/o/dreamers-laboratory/agent-fleet-manager`.
+<!-- yarkr:install:end -->
 
 ## Optional Jev classification
 
